@@ -1,0 +1,29 @@
+# 資料庫 SQL-SERVER
+database_name: notebook
+
+
+# USER TABLE
+CREATE TABLE [dbo].[Users] (
+    [Id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(), -- 對應 TypeScript 的 string id
+    [Email] NVARCHAR(255) NOT NULL,                 -- 電子郵件，文字欄位
+    [CreatedAt] DATETIME2 NOT NULL DEFAULT SYSDATETIME(), -- 建立時間
+    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id])
+);
+
+-- Email 通常需要唯一，避免重複帳號
+CREATE UNIQUE INDEX [UQ_Users_Email] ON [dbo].[Users] ([Email]);
+
+# Notes Table
+CREATE TABLE [dbo].[Notes] (
+    [Id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),   -- 筆記 ID
+    [UserId] UNIQUEIDENTIFIER NOT NULL,               -- 關聯到 User (不強制 FK)
+    [Title] NVARCHAR(200) NOT NULL,                   -- 筆記標題
+    [Content] NVARCHAR(MAX) NOT NULL,                 -- 筆記內容
+    [Tags] NVARCHAR(MAX) NULL,                        -- 標籤，可考慮用 JSON 儲存 string[]
+    [CreatedAt] DATETIME2 NOT NULL DEFAULT SYSDATETIME(), -- 建立時間
+    [UpdatedAt] DATETIME2 NOT NULL DEFAULT SYSDATETIME(), -- 更新時間
+    CONSTRAINT [PK_Notes] PRIMARY KEY CLUSTERED ([Id])
+);
+
+-- 建議補上索引，讓 UserId 查詢更快
+CREATE INDEX [IX_Notes_UserId] ON [dbo].[Notes] ([UserId]);
