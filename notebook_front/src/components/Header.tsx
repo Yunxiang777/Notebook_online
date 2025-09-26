@@ -1,4 +1,3 @@
-import React from 'react'
 import { LogOut, Plus, Search } from 'lucide-react'
 import type { User } from '../types'
 

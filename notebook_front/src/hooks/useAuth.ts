@@ -29,6 +29,7 @@ export function useAuth() {
             setCurrentUser(existingUser)
             setUser(existingUser)
             return { error: null }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             return { error: { message: '登入失敗' } }
         }
@@ -54,6 +55,7 @@ export function useAuth() {
             setCurrentUser(newUser)
             setUser(newUser)
             return { error: null }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             return { error: { message: '註冊失敗' } }
         }
