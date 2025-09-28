@@ -12,5 +12,6 @@ namespace notebook_back.Models
         public string Email { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string Password { get; set; }
     }
 }
