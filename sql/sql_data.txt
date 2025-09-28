@@ -27,3 +27,7 @@ CREATE TABLE [dbo].[Notes] (
 
 -- 建議補上索引，讓 UserId 查詢更快
 CREATE INDEX [IX_Notes_UserId] ON [dbo].[Notes] ([UserId]);
+
+# USER 新增密碼欄位
+ALTER TABLE [notebook].[dbo].[Users]
+ADD [Password] NVARCHAR(255) NOT NULL DEFAULT('');

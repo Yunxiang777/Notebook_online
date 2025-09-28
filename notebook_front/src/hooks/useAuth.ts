@@ -14,26 +14,32 @@ export function useAuth() {
 
     const signIn = async (email: string, password: string) => {
         try {
-            const existingUser = findUserByEmail(email)
+            // 1. 呼叫後端 API 找使用者
+            const res = await fetch(`http://localhost:5263/api/Users/findByEmail/${email}`)
 
-            if (!existingUser) {
+            if (!res.ok) {
+                // 404 或其他錯誤
                 return { error: { message: '用戶不存在，請先註冊' } }
             }
 
-            // 簡單的密碼驗證（實際應用中應該使用加密）
-            const storedPassword = localStorage.getItem(`password_${existingUser.id}`)
-            if (storedPassword !== password) {
+            const existingUser = await res.json()
+
+            // 2. 比對密碼
+            if (existingUser.password !== password) {
                 return { error: { message: '密碼錯誤' } }
             }
 
-            setCurrentUser(existingUser)
+            // 3. 登入成功 → 更新狀態
+            // setCurrentUser(existingUser)
             setUser(existingUser)
+
             return { error: null }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-            return { error: { message: '登入失敗' } }
+            return { error: { message: '登入失敗，請稍後再試' } }
         }
     }
+
 
     const signUp = async (email: string, password: string) => {
         try {
