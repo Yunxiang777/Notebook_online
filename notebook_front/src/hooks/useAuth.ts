@@ -43,29 +43,42 @@ export function useAuth() {
 
     const signUp = async (email: string, password: string) => {
         try {
-            const existingUser = findUserByEmail(email)
+            // 1. 先檢查該 email 是否已存在 (呼叫後端)
+            const checkRes = await fetch(`http://localhost:5263/api/Users/findByEmail/${email}`)
 
-            if (existingUser) {
+            if (checkRes.ok) {
                 return { error: { message: '此電子郵件已被註冊' } }
             }
 
-            const newUser: User = {
-                id: generateId(),
-                email,
-                createdAt: new Date().toISOString()
+            // 2. 呼叫後端 API 建立新用戶
+            const res = await fetch('http://localhost:5263/api/Users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,   // ⚠️ 後端 Model 需要有 Password 欄位才行
+                }),
+            })
+
+            if (!res.ok) {
+                return { error: { message: '註冊失敗，請稍後再試' } }
             }
 
-            saveUser(newUser)
-            localStorage.setItem(`password_${newUser.id}`, password)
+            const newUser = await res.json()
 
-            setCurrentUser(newUser)
+            // 3. 註冊成功 → 儲存登入狀態
+            // setCurrentUser(newUser)
             setUser(newUser)
+
             return { error: null }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-            return { error: { message: '註冊失敗' } }
+            return { error: { message: '註冊失敗，請稍後再試' } }
         }
     }
+
 
     const signOut = async () => {
         setCurrentUser(null)
