@@ -40,17 +40,10 @@ export function useAuth() {
         }
     }
 
-
+    //註冊用戶
     const signUp = async (email: string, password: string) => {
         try {
-            // 1. 先檢查該 email 是否已存在 (呼叫後端)
-            const checkRes = await fetch(`http://localhost:5263/api/Users/findByEmail/${email}`)
-
-            if (checkRes.ok) {
-                return { error: { message: '此電子郵件已被註冊' } }
-            }
-
-            // 2. 呼叫後端 API 建立新用戶
+            // 1. 呼叫後端 API 建立新用戶
             const res = await fetch('http://localhost:5263/api/Users', {
                 method: 'POST',
                 headers: {
@@ -58,26 +51,30 @@ export function useAuth() {
                 },
                 body: JSON.stringify({
                     email,
-                    password,   // ⚠️ 後端 Model 需要有 Password 欄位才行
+                    password, // 後端 User Model 需有 Password 欄位
                 }),
-            })
+            });
 
-            if (!res.ok) {
-                return { error: { message: '註冊失敗，請稍後再試' } }
+            // 2. 解析 ApiResponse<User>
+            const apiResponse = await res.json() as { success: boolean; message?: string; data?: User };
+
+            if (!apiResponse.success) {
+                // 註冊失敗，例如 email 已存在
+                return { error: { message: apiResponse.message || '註冊失敗' } };
             }
 
-            const newUser = await res.json()
+            // 3. 註冊成功 → 更新前端狀態
+            const newUser = apiResponse.data!;
+            setCurrentUser(newUser);
+            setUser(newUser);
 
-            // 3. 註冊成功 → 儲存登入狀態
-            // setCurrentUser(newUser)
-            setUser(newUser)
+            return { error: null };
 
-            return { error: null }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-            return { error: { message: '註冊失敗，請稍後再試' } }
+            return { error: { message: '註冊失敗，請稍後再試' } };
         }
-    }
+    };
 
 
     const signOut = async () => {

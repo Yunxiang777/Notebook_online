@@ -40,15 +40,26 @@ namespace notebook_back.Controllers
 
         // 新增用戶
         [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(User user)
+        public async Task<ActionResult<ApiResponse<User>>> CreateUser(User user)
         {
+            // 先檢查 Email 是否已存在
+            var exists = await _context.Users.AnyAsync(u => u.Email == user.Email);
+            if (exists)
+            {
+                // 回傳統一 ApiResponse 格式 + HTTP 409
+                return Conflict(ApiResponse<User>.Fail("Email 已被註冊"));
+            }
+
+            // 建立新用戶
             user.Id = Guid.NewGuid();
             user.CreatedAt = DateTime.UtcNow;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
+            // 回傳成功 ApiResponse
+            return Ok(ApiResponse<User>.Ok(user));
         }
+
     }
 }
