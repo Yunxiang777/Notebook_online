@@ -15,13 +15,17 @@ export function useAuth() {
 
     // 登入
     const signIn = async (email: string, password: string) => {
-        const res = await signInApi(email, password)
-        if (!res.success) return { error: { message: res.message } }
+        const res = await signInApi(email, password);
 
-        setCurrentUser(res.data!)
-        setUser(res.data!)
-        return { error: null }
-    }
+        if (!res.success) return { error: { message: res.message } };
+
+        // 假設後端用 Cookie 存 JWT，前端不需要拿 token
+        // data 也可以存使用者基本資訊，如果後端有回傳
+        // setCurrentUser(res.data || null);
+        setUser(res.data || null);
+
+        return { error: null };
+    };
 
     // 註冊
     const signUp = async (email: string, password: string) => {
