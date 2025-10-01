@@ -48,6 +48,7 @@ function App() {
     return <LoadingSpinner />
   }
 
+  // 登入 | 註冊 頁面
   if (!user) {
     return <AuthForm onSignIn={signIn} onSignUp={signUp} loading={authLoading} />
   }

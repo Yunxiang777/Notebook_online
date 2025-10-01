@@ -16,6 +16,7 @@ export default function AuthForm({ onSignIn, onSignUp, loading }: AuthFormProps)
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
 
+    // 登入 | 註冊
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')

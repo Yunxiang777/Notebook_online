@@ -1,45 +1,41 @@
 import { useState, useEffect } from 'react'
 import type { User } from '../types'
-import { getCurrentUser, setCurrentUser } from '../lib/storage'
 import { signInApi, signUpApi } from '../lib/usersApi'
 
+// TODO: 未來可以新增 getMeApi 從後端拿使用者資訊
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const currentUser = getCurrentUser()
-        setUser(currentUser)
+        // 這裡可以加個 "getMe" API，自動讀 Cookie 拿使用者
         setLoading(false)
     }, [])
 
     // 登入
     const signIn = async (email: string, password: string) => {
-        const res = await signInApi(email, password);
+        const res = await signInApi(email, password)
 
-        if (!res.success) return { error: { message: res.message } };
+        if (!res.success) return { error: { message: res.message } }
 
-        // 假設後端用 Cookie 存 JWT，前端不需要拿 token
-        // data 也可以存使用者基本資訊，如果後端有回傳
-        // setCurrentUser(res.data || null);
-        setUser(res.data || null);
+        // 後端 Cookie 已經存好，這裡只存基本 user 資料
+        setUser(res.data || null)
 
-        return { error: null };
-    };
+        return { error: null }
+    }
 
     // 註冊
     const signUp = async (email: string, password: string) => {
         const res = await signUpApi(email, password)
+
         if (!res.success) return { error: { message: res.message } }
 
-        setCurrentUser(res.data!)
-        setUser(res.data!)
+        setUser(res.data || null)
         return { error: null }
     }
 
-
     const signOut = async () => {
-        setCurrentUser(null)
+        // TODO: 可以呼叫後端 /logout API 把 Cookie 清掉
         setUser(null)
         return { error: null }
     }

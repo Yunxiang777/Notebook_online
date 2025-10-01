@@ -51,27 +51,26 @@ namespace notebook_back.Controllers
         }
 
         // 登入並產生 JWT
-        [HttpPost("login")] // 對應 POST api/users/login
+        [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<string>>> Login([FromBody] LoginRequest request)
         {
-            // 以 Email 找使用者
+            // 1. 以 Email 找使用者
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            // 比對密碼
+            // 2. 比對密碼
             if (user == null || user.Password != request.Password)
                 return Unauthorized(ApiResponse<string>.Fail("帳號或密碼錯誤"));
 
-            // 生成 JWT
+            // 3. 生成 JWT
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("role", "User")
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            // 簽章
+
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
@@ -79,10 +78,10 @@ namespace notebook_back.Controllers
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
             );
-            // token 序列化字串
+
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            // JWT 存 Cookie
+            // 存到 Cookie
             Response.Cookies.Append("jwtToken", tokenString, new CookieOptions
             {
                 HttpOnly = true,
