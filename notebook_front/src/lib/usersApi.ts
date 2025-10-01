@@ -30,9 +30,7 @@ export const signInApi = async (email: string, password: string) => {
             credentials: 'include'
         })
 
-        const apiResponse = await res.json() as { success: boolean; message?: string; data?: User }
-        console.log(apiResponse);
-
+        const apiResponse = await res.json() as { success: boolean; message?: string; }
         return apiResponse
 
     } catch {
