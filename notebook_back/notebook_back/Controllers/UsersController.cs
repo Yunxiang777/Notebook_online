@@ -47,7 +47,7 @@ namespace notebook_back.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(ApiResponse<User>.Ok(user));
+            return Ok(ApiResponse<User>.Ok(user, "註冊成功"));
         }
 
         // 登入並產生 JWT
@@ -90,7 +90,7 @@ namespace notebook_back.Controllers
                 Expires = DateTime.UtcNow.AddHours(1)
             });
 
-            return Ok(ApiResponse<string>.Ok("登入成功"));
+            return Ok(ApiResponse<string>.Ok(default, "登入成功"));
         }
 
     }

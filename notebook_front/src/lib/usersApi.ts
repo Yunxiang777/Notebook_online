@@ -31,6 +31,8 @@ export const signInApi = async (email: string, password: string) => {
         })
 
         const apiResponse = await res.json() as { success: boolean; message?: string; data?: User }
+        console.log(apiResponse);
+
         return apiResponse
 
     } catch {
