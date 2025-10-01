@@ -1,14 +1,15 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using notebook_back.Data;
 using System.Text;
 
+// 建立 Web 應用程式建構器（讀取 appsettings, DI container, environment 等）
 var builder = WebApplication.CreateBuilder(args);
 
-// 讀取 SecretKey
+// 讀取 SecretKey 把字串轉成 byte[]（將來作為對稱金鑰）
 var secretKey = builder.Configuration["Jwt:SecretKey"];
-var key = Encoding.UTF8.GetBytes(secretKey);
+var key = Encoding.UTF8.GetBytes(secretKey); // 把字串轉成 byte[]（將來作為對稱金鑰）
 
 // 註冊 DbContext (SQL Server)
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -19,13 +20,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:5173") // 允許的前端網址
-            .AllowAnyHeader()
-            .AllowCredentials()
-            .AllowAnyMethod());
+            .WithOrigins("http://localhost:5173") // 允許的前端來源
+            .AllowAnyHeader()    // 允許所有 Header
+            .AllowCredentials()  // 允許瀏覽器帶 cookie/認證資訊
+            .AllowAnyMethod());  // 允許任意 HTTP 方法 (GET/POST/PUT/DELETE...)
 });
 
-//JWT 驗證
+// JWT 驗證
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -41,26 +42,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// 註冊 Controllers
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
+// 建構 App（把所有 service 與 middleware pipeline 準備好）
 var app = builder.Build();
 
-// Swagger
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 // Middleware
-app.UseCors("AllowFrontend");
-app.UseHttpsRedirection();
-
-app.UseAuthentication(); // 先驗證
-app.UseAuthorization();  // 再授權
-
-app.MapControllers();
+app.UseCors("AllowFrontend"); // 啟用之前定義的 CORS policy
+app.UseHttpsRedirection(); // 強制 HTTP -> HTTPS 重新導向（生產環境建議啟用）
+app.UseAuthentication(); // 啟用驗證中介軟體（將嘗試驗證請求，產生 User principal）
+app.UseAuthorization();  // 啟用授權中介軟體（基於已驗證的 User 判斷是否可存取資源）
+app.MapControllers(); // 將註冊的 Controller endpoint 映射到路由
 
 app.Run();
