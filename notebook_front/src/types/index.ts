@@ -10,10 +10,15 @@ export interface Note {
 export interface User {
     id: string
     email: string
-    createdAt: string
 }
 
 export interface LoginResponse {
+    success: boolean
+    message?: string
+    data?: User
+}
+
+export interface RegisterResponse {
     success: boolean
     message?: string
     data?: User

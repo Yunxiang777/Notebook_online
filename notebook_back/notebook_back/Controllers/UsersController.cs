@@ -30,27 +30,42 @@ namespace notebook_back.Controllers
             return await _context.Users.ToListAsync();
         }
 
-        // 新增用戶
-        [HttpPost]
-        public async Task<ActionResult<ApiResponse<User>>> CreateUser(User user)
+        // 用戶註冊
+        [HttpPost("register")]
+        public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
         {
             // 檢查是否已有相同 Email
-            var exists = await _context.Users.AnyAsync(u => u.Email == user.Email);
+            var exists = await _context.Users.AnyAsync(u => u.Email == request.Email);
             if (exists)
             {
-                return Conflict(ApiResponse<User>.Fail("Email 已被註冊"));
+                return Conflict(RegisterResponse.Fail("Email 已被註冊"));
             }
 
-            // 寫入db
-            user.Id = Guid.NewGuid();
-            user.CreatedAt = DateTime.UtcNow; 
+            // 建立新用戶
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = request.Email,
+                Password = request.Password,
+                CreatedAt = DateTime.UtcNow
+            };
+
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(ApiResponse<User>.Ok(user, "註冊成功"));
+            // 回傳 UserDto
+            var userDto = new UserDto
+            {
+                Id = user.Id.ToString(),
+                Email = user.Email
+            };
+
+            return Ok(RegisterResponse.Ok(userDto, "註冊成功"));
         }
 
-        // 登入並產生 JWT
+
+
+        // 用戶登入並產生 JWT
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {

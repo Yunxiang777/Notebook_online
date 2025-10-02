@@ -1,22 +1,22 @@
-import type { User, LoginResponse } from '../types'
+import type { LoginResponse, RegisterResponse } from '../types'
 
 const BASE_URL = 'http://localhost:5263/api/Users'
 
 // 註冊
-export const signUpApi = async (email: string, password: string) => {
+export const signUpApi = async (email: string, password: string): Promise<RegisterResponse> => {
     try {
-        const res = await fetch(`${BASE_URL}`, {
+        const res = await fetch(`${BASE_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
             credentials: 'include'
         })
 
-        const apiResponse = await res.json() as { success: boolean; message?: string; data?: User }
+        const apiResponse = await res.json() as RegisterResponse
         return apiResponse
 
     } catch {
-        return { success: false, message: '註冊失敗，請稍後再試' }
+        return { success: false, message: '系統錯誤，請稍後再試' }
     }
 }
 
@@ -27,7 +27,7 @@ export const signInApi = async (email: string, password: string): Promise<LoginR
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
-            credentials: 'include' // 這樣 Cookie 才會被瀏覽器帶回
+            credentials: 'include'
         })
 
         const apiResponse = await res.json() as LoginResponse

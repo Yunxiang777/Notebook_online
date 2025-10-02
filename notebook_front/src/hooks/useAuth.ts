@@ -20,8 +20,6 @@ export function useAuth() {
             return { error: { message: res.message } }
         }
 
-        // 後端 Cookie 已經存好 JWT
-        // 這裡只存 user 基本資料到前端 Context / Redux
         if (res.data) {
             setUser(res.data)
         }
