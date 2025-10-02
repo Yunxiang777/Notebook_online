@@ -16,13 +16,19 @@ export function useAuth() {
     const signIn = async (email: string, password: string) => {
         const res = await signInApi(email, password)
 
-        if (!res.success) return { error: { message: res.message } }
+        if (!res.success) {
+            return { error: { message: res.message } }
+        }
 
-        // 後端 Cookie 已經存好，這裡只存基本 user 資料
-        setUser(res.data || null)
+        // 後端 Cookie 已經存好 JWT
+        // 這裡只存 user 基本資料到前端 Context / Redux
+        if (res.data) {
+            setUser(res.data)
+        }
 
         return { error: null }
     }
+
 
     // 註冊
     const signUp = async (email: string, password: string) => {

@@ -12,3 +12,9 @@ export interface User {
     email: string
     createdAt: string
 }
+
+export interface LoginResponse {
+    success: boolean
+    message?: string
+    data?: User
+}

@@ -1,4 +1,4 @@
-import type { User } from '../types'
+import type { User, LoginResponse } from '../types'
 
 const BASE_URL = 'http://localhost:5263/api/Users'
 
@@ -21,16 +21,16 @@ export const signUpApi = async (email: string, password: string) => {
 }
 
 // 登入
-export const signInApi = async (email: string, password: string) => {
+export const signInApi = async (email: string, password: string): Promise<LoginResponse> => {
     try {
         const res = await fetch(`${BASE_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
-            credentials: 'include'
+            credentials: 'include' // 這樣 Cookie 才會被瀏覽器帶回
         })
 
-        const apiResponse = await res.json() as { success: boolean; message?: string; }
+        const apiResponse = await res.json() as LoginResponse
         return apiResponse
 
     } catch {
