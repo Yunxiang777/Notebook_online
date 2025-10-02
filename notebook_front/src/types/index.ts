@@ -12,14 +12,13 @@ export interface User {
     email: string
 }
 
-export interface LoginResponse {
+// BaseResponse
+export interface BaseResponse<T> {
     success: boolean
     message?: string
-    data?: User
+    data?: T
 }
 
-export interface RegisterResponse {
-    success: boolean
-    message?: string
-    data?: User
-}
+// 泛型派生
+export type LoginResponse = BaseResponse<User>
+export type RegisterResponse = BaseResponse<User>
