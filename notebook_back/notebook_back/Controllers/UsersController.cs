@@ -52,16 +52,15 @@ namespace notebook_back.Controllers
 
         // 登入並產生 JWT
         [HttpPost("login")]
-        public async Task<ActionResult<ApiResponse<string>>> Login([FromBody] LoginRequest request)
+        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
-            // 1. 以 Email 找使用者
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            // 2. 比對密碼
+            // 登入失敗
             if (user == null || user.Password != request.Password)
-                return Unauthorized(ApiResponse<string>.Fail("帳號或密碼錯誤"));
+                return Unauthorized(LoginResponse.Fail("帳號或密碼錯誤"));
 
-            // 3. 生成 JWT
+            // 生成 JWT
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -81,7 +80,7 @@ namespace notebook_back.Controllers
 
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            // 存到 Cookie
+            // 存到 HttpOnly Cookie
             Response.Cookies.Append("jwtToken", tokenString, new CookieOptions
             {
                 HttpOnly = true,
@@ -90,8 +89,16 @@ namespace notebook_back.Controllers
                 Expires = DateTime.UtcNow.AddHours(1)
             });
 
-            return Ok(ApiResponse<string>.Ok(default, "登入成功"));
+            // 回傳 user DTO
+            var userDto = new UserDto
+            {
+                Id = user.Id.ToString(),
+                Email = user.Email
+            };
+
+            return Ok(LoginResponse.Ok(userDto, "登入成功"));
         }
+
 
     }
 
