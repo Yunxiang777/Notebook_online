@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using notebook_back.Data;
 using notebook_back.Models;
 using notebook_back.Helpers;
+using notebook_back.DTOs;
 
 namespace notebook_back.Controllers
 {
@@ -36,7 +37,7 @@ namespace notebook_back.Controllers
 
         // 取得目前使用者的筆記
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Note>>> GetNotes()
+        public async Task<ActionResult<IEnumerable<NoteResponse>>> GetNotes()
         {
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
@@ -44,6 +45,15 @@ namespace notebook_back.Controllers
             var notes = await _context.Notes
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.UpdatedAt)
+                .Select(n => new NoteResponse
+                {
+                    Id = n.Id,
+                    Title = n.Title,
+                    Content = n.Content,
+                    Tags = n.TagList,  // ← 永遠回傳陣列
+                    CreatedAt = n.CreatedAt,
+                    UpdatedAt = n.UpdatedAt
+                })
                 .ToListAsync();
 
             return Ok(notes);

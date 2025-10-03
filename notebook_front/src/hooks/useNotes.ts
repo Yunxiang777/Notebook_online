@@ -11,12 +11,20 @@ export function useNotes() {
     const fetchNotes = async () => {
         setLoading(true)
         try {
-            const res = await apiRequest_NOTES<BaseResponse<Note[]>>('', { method: 'GET' })
-            if (res.success && res.data) {
+            // 這裡直接用 Note[]，不要用 BaseResponse
+            const res = await apiRequest_NOTES<Note[]>('', { method: 'GET' })
+
+            if (res && Array.isArray(res)) {
                 // 按 updatedAt 排序
-                setNotes(res.data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()))
+                setNotes(
+                    res.sort(
+                        (a, b) =>
+                            new Date(b.updatedAt).getTime() -
+                            new Date(a.updatedAt).getTime()
+                    )
+                )
             } else {
-                console.error(res.message)
+                console.error("回傳格式不是陣列:", res)
             }
         } catch (err) {
             console.error('取得筆記錯誤', err)
@@ -24,6 +32,7 @@ export function useNotes() {
             setLoading(false)
         }
     }
+
 
     useEffect(() => {
         fetchNotes()
