@@ -30,6 +30,57 @@ namespace notebook_back.Controllers
             return await _context.Users.ToListAsync();
         }
 
+        [HttpGet("me")]
+        public async Task<ActionResult<GetMeResponse>> GetMe()
+        {
+            var token = Request.Cookies["jwtToken"];
+            if (string.IsNullOrEmpty(token))
+                return Unauthorized(GetMeResponse.Fail("未登入"));
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]);
+
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero
+                }, out _);
+
+                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(GetMeResponse.Fail("JWT 缺少使用者資訊"));
+
+                var user = await _context.Users.FindAsync(Guid.Parse(userId));
+                if (user == null)
+                    return Unauthorized(GetMeResponse.Fail("使用者不存在"));
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Email = user.Email
+                };
+
+                return Ok(GetMeResponse.Ok(userDto));
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return Unauthorized(GetMeResponse.Fail("JWT 已過期"));
+            }
+            catch
+            {
+                return Unauthorized(GetMeResponse.Fail("JWT 驗證失敗"));
+            }
+        }
+
+
+
+
         // 用戶註冊
         [HttpPost("register")]
         public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)

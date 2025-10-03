@@ -1,16 +1,26 @@
 // hooks/useAuth.ts
 import { useState, useEffect } from 'react'
 import type { User } from '../types'
-import { signInApi, signUpApi } from '../lib/usersApi'
+import { signInApi, signUpApi, getMeApi } from '../lib/usersApi'
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
 
+
+    // 初始化，檢查是否已登入
     useEffect(() => {
-        // TODO: 之後可以呼叫 getMeApi 自動抓取登入資訊
-        setLoading(false)
+        (async () => {
+            const res = await getMeApi()
+            if (res.success && res.data) {
+                setUser(res.data)
+            } else {
+                setUser(null) // 沒登入，不用顯示錯誤，交給 UI 去導到登入頁
+            }
+            setLoading(false)
+        })()
     }, [])
+
 
     // 登入
     const signIn = async (email: string, password: string) => {

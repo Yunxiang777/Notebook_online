@@ -22,3 +22,4 @@ export interface BaseResponse<T> {
 // 泛型派生
 export type LoginResponse = BaseResponse<User>
 export type RegisterResponse = BaseResponse<User>
+export type GetMeResponse = BaseResponse<User>
