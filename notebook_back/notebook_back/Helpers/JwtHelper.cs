@@ -45,5 +45,12 @@ namespace notebook_back.Helpers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        // 取得使用者 ID
+        public static Guid? GetUserId(this ClaimsPrincipal user)
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            return string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId);
+        }
     }
 }

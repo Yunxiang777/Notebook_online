@@ -9,7 +9,9 @@ import LoadingSpinner from './components/LoadingSpinner'
 import type { Note } from './types'
 
 function App() {
+  // 使用者驗證
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth()
+  // 筆記本
   const { notes, loading: notesLoading, searchTerm, setSearchTerm, createNote, updateNote, deleteNote } = useNotes()
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | undefined>()

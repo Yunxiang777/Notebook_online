@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace notebook_back.Models
 {
@@ -17,9 +19,18 @@ namespace notebook_back.Models
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        public string? Tags { get; set; }   // 以 JSON 或逗號分隔字串存標籤
+        // 真正存資料庫的欄位
+        public string? Tags { get; set; } = "[]"; // 存 JSON
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // NotMapped 屬性，程式操作用 List<string>
+        [NotMapped]
+        public List<string> TagList
+        {
+            get => string.IsNullOrEmpty(Tags) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(Tags)!;
+            set => Tags = JsonSerializer.Serialize(value);
+        }
     }
 }

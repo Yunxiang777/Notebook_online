@@ -1,76 +1,93 @@
-import { useState, useEffect } from 'react'
-import type { Note } from '../types'
-import { getNotes, saveNotes, generateId, getCurrentUser } from '../lib/storage'
+import { useState, useEffect, useMemo } from 'react'
+import type { Note, BaseResponse } from '../types'
+import { apiRequest_NOTES } from '../lib/apiRequest'
 
 export function useNotes() {
     const [notes, setNotes] = useState<Note[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
 
-    const fetchNotes = () => {
-        const currentUser = getCurrentUser()
-        if (currentUser) {
-            const userNotes = getNotes(currentUser.id)
-            setNotes(userNotes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()))
+    /** 取得目前使用者的筆記 */
+    const fetchNotes = async () => {
+        setLoading(true)
+        try {
+            const res = await apiRequest_NOTES<BaseResponse<Note[]>>('', { method: 'GET' })
+            if (res.success && res.data) {
+                // 按 updatedAt 排序
+                setNotes(res.data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()))
+            } else {
+                console.error(res.message)
+            }
+        } catch (err) {
+            console.error('取得筆記錯誤', err)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     useEffect(() => {
         fetchNotes()
     }, [])
 
+    /** 新增筆記 */
     const createNote = async (noteData: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
-        const currentUser = getCurrentUser()
-        if (!currentUser) return { error: 'User not authenticated' }
-
-        const newNote: Note = {
-            ...noteData,
-            id: generateId(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+        try {
+            const res = await apiRequest_NOTES<BaseResponse<Note>>('', {
+                method: 'POST',
+                body: JSON.stringify(noteData)
+            })
+            if (res.success && res.data) {
+                setNotes(prev => [res.data!, ...prev])
+                return { data: res.data, error: null }
+            } else {
+                return { data: null, error: res.message || '新增筆記失敗' }
+            }
+        } catch {
+            return { data: null, error: '網路錯誤' }
         }
-
-        const updatedNotes = [newNote, ...notes]
-        setNotes(updatedNotes)
-        saveNotes(currentUser.id, updatedNotes)
-
-        return { data: newNote, error: null }
     }
 
+    /** 更新筆記 */
     const updateNote = async (id: string, noteData: Partial<Note>) => {
-        const currentUser = getCurrentUser()
-        if (!currentUser) return { error: 'User not authenticated' }
-
-        const updatedNotes = notes.map(note =>
-            note.id === id
-                ? { ...note, ...noteData, updatedAt: new Date().toISOString() }
-                : note
-        )
-
-        setNotes(updatedNotes)
-        saveNotes(currentUser.id, updatedNotes)
-
-        const updatedNote = updatedNotes.find(note => note.id === id)
-        return { data: updatedNote, error: null }
+        try {
+            const res = await apiRequest_NOTES<BaseResponse<Note>>(`/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(noteData)
+            })
+            if (res.success && res.data) {
+                setNotes(prev => prev.map(n => (n.id === id ? res.data! : n)))
+                return { data: res.data, error: null }
+            } else {
+                return { data: null, error: res.message || '更新筆記失敗' }
+            }
+        } catch {
+            return { data: null, error: '網路錯誤' }
+        }
     }
 
+    /** 刪除筆記 */
     const deleteNote = async (id: string) => {
-        const currentUser = getCurrentUser()
-        if (!currentUser) return { error: 'User not authenticated' }
-
-        const updatedNotes = notes.filter(note => note.id !== id)
-        setNotes(updatedNotes)
-        saveNotes(currentUser.id, updatedNotes)
-
-        return { error: null }
+        try {
+            const res = await apiRequest_NOTES<BaseResponse<null>>(`/${id}`, { method: 'DELETE' })
+            if (res.success) {
+                setNotes(prev => prev.filter(n => n.id !== id))
+                return { error: null }
+            } else {
+                return { error: res.message || '刪除筆記失敗' }
+            }
+        } catch {
+            return { error: '網路錯誤' }
+        }
     }
 
-    const filteredNotes = notes.filter(note =>
-        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+    /** 搜尋過濾筆記 */
+    const filteredNotes = useMemo(() =>
+        notes.filter(note =>
+            note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        ),
+        [notes, searchTerm])
 
     return {
         notes: filteredNotes,
@@ -80,6 +97,6 @@ export function useNotes() {
         createNote,
         updateNote,
         deleteNote,
-        refreshNotes: fetchNotes,
+        refreshNotes: fetchNotes
     }
 }
