@@ -3,10 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens; 
 using notebook_back.Data;
 using notebook_back.Models; 
-using System.IdentityModel.Tokens.Jwt; 
 using System.Security.Claims;
-using System.Text;
 using notebook_back.DTOs;
+using notebook_back.Helpers;
 
 namespace notebook_back.Controllers
 {
@@ -30,6 +29,7 @@ namespace notebook_back.Controllers
             return await _context.Users.ToListAsync();
         }
 
+        // 取得目前登入的用戶 (透過 JWT)
         [HttpGet("me")]
         public async Task<ActionResult<GetMeResponse>> GetMe()
         {
@@ -39,20 +39,9 @@ namespace notebook_back.Controllers
 
             try
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]);
+                var principal = JwtHelper.ValidateJwtToken(token, _config["Jwt:SecretKey"]);
+                var userId = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                }, out _);
-
-                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(GetMeResponse.Fail("JWT 缺少使用者資訊"));
 
@@ -60,13 +49,7 @@ namespace notebook_back.Controllers
                 if (user == null)
                     return Unauthorized(GetMeResponse.Fail("使用者不存在"));
 
-                var userDto = new UserDto
-                {
-                    Id = user.Id.ToString(),
-                    Email = user.Email
-                };
-
-                return Ok(GetMeResponse.Ok(userDto));
+                return Ok(GetMeResponse.Ok(UserMapper.ToUserDto(user)));
             }
             catch (SecurityTokenExpiredException)
             {
@@ -77,9 +60,6 @@ namespace notebook_back.Controllers
                 return Unauthorized(GetMeResponse.Fail("JWT 驗證失敗"));
             }
         }
-
-
-
 
         // 用戶註冊
         [HttpPost("register")]
@@ -104,17 +84,8 @@ namespace notebook_back.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // 回傳 UserDto
-            var userDto = new UserDto
-            {
-                Id = user.Id.ToString(),
-                Email = user.Email
-            };
-
-            return Ok(RegisterResponse.Ok(userDto, "註冊成功"));
+            return Ok(RegisterResponse.Ok(UserMapper.ToUserDto(user), "註冊成功"));
         }
-
-
 
         // 用戶登入並產生 JWT
         [HttpPost("login")]
@@ -127,24 +98,12 @@ namespace notebook_back.Controllers
                 return Unauthorized(LoginResponse.Fail("帳號或密碼錯誤"));
 
             // 生成 JWT
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim("role", "User")
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: creds
+            var tokenString = JwtHelper.GenerateJwtToken(
+                user,
+                _config["Jwt:SecretKey"],
+                _config["Jwt:Issuer"],
+                _config["Jwt:Audience"]
             );
-
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
             // 存到 HttpOnly Cookie
             Response.Cookies.Append("jwtToken", tokenString, new CookieOptions
@@ -155,24 +114,15 @@ namespace notebook_back.Controllers
                 Expires = DateTime.UtcNow.AddHours(1)
             });
 
-            // 回傳 user DTO
-            var userDto = new UserDto
-            {
-                Id = user.Id.ToString(),
-                Email = user.Email
-            };
-
-            return Ok(LoginResponse.Ok(userDto, "登入成功"));
+            return Ok(LoginResponse.Ok(UserMapper.ToUserDto(user), "登入成功"));
         }
 
         // 登出
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public ActionResult<LogoutResponse> Logout()
         {
-            // 覆蓋 Cookie，設為過期
             Response.Cookies.Delete("jwtToken");
-
-            return Ok(new { success = true, message = "已登出" });
+            return Ok(LogoutResponse.Ok("已登出"));
         }
 
     }
