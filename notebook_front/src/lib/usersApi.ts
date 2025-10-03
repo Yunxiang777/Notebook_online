@@ -1,5 +1,5 @@
 // lib/usersApi.ts
-import type { LoginResponse, RegisterResponse, GetMeResponse } from '../types'
+import type { LoginResponse, RegisterResponse, GetMeResponse, LogoutResponse } from '../types'
 import { apiRequest_USERS } from './apiRequest'
 
 // 註冊
@@ -19,3 +19,7 @@ export const signInApi = (email: string, password: string) =>
 // 取得目前使用者
 export const getMeApi = () =>
     apiRequest_USERS<GetMeResponse>('/me', { method: 'GET' })
+
+// 登出
+export const signOutApi = () =>
+    apiRequest_USERS<LogoutResponse>('/logout', { method: 'POST', })

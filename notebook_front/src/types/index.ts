@@ -23,3 +23,4 @@ export interface BaseResponse<T> {
 export type LoginResponse = BaseResponse<User>
 export type RegisterResponse = BaseResponse<User>
 export type GetMeResponse = BaseResponse<User>
+export type LogoutResponse = BaseResponse<null>

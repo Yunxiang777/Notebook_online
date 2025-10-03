@@ -1,7 +1,7 @@
 // hooks/useAuth.ts
 import { useState, useEffect } from 'react'
 import type { User } from '../types'
-import { signInApi, signUpApi, getMeApi } from '../lib/usersApi'
+import { signInApi, signUpApi, getMeApi, signOutApi } from '../lib/usersApi'
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null)
@@ -42,7 +42,9 @@ export function useAuth() {
 
     // 登出
     const signOut = async () => {
-        // TODO: 可以呼叫後端 /logout API 清 Cookie
+        const res = await signOutApi()
+        if (!res.success) return { error: { message: res.message } }
+
         setUser(null)
         return { error: null }
     }

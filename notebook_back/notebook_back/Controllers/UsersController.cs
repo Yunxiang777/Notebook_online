@@ -165,6 +165,15 @@ namespace notebook_back.Controllers
             return Ok(LoginResponse.Ok(userDto, "登入成功"));
         }
 
+        // 登出
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // 覆蓋 Cookie，設為過期
+            Response.Cookies.Delete("jwtToken");
+
+            return Ok(new { success = true, message = "已登出" });
+        }
 
     }
 
